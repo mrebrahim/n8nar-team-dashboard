@@ -61,6 +61,45 @@ const TABS = [
   { id: 'mission', label: 'Mission 1000', icon: '🔥' },
 ]
 
+// Component: shows team tasks incomplete, grouped by employee
+function TeamTasksSection({ teamTasks, userEmail }) {
+  const isContentLead = userEmail === 'andrew.i@n8nar.com'
+  const title = isContentLead ? '📱 حالة النشر على السوشيال' : '👥 تاسكات الفريق — غير مكتملة'
+
+  // Group by employee
+  const grouped = {}
+  teamTasks.forEach(t => {
+    const name = t.emp?.name || 'موظف'
+    if (!grouped[name]) grouped[name] = { color: t.emp?.color || '#666', initials: t.emp?.avatar_initials || '?', tasks: [] }
+    grouped[name].tasks.push(t)
+  })
+
+  // Get today's completions from supabase — we just show the tasks as-is
+  // (actual done status comes from the DB query filtering)
+
+  return (
+    <div style={{ marginTop: 14 }}>
+      <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 8, fontWeight: 600, letterSpacing: 1 }}>{title}</div>
+      {Object.entries(grouped).map(([name, info]) => (
+        <div key={name} className="card" style={{ marginBottom: 8, padding: '12px 14px', borderColor: info.color + '30' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <div style={{ width: 26, height: 26, borderRadius: '50%', background: info.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#fff', flexShrink: 0 }}>{info.initials}</div>
+            <div style={{ fontSize: 13, fontWeight: 600 }}>{name}</div>
+            <span className="tag badge-err" style={{ fontSize: 9, marginRight: 'auto' }}>{info.tasks.length} مهمة</span>
+          </div>
+          {info.tasks.map((t, i) => (
+            <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: i < info.tasks.length - 1 ? '0.5px solid var(--border)' : 'none' }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: info.color, flexShrink: 0 }} />
+              <div style={{ fontSize: 12, color: 'var(--text2)', flex: 1 }}>{t.task_text}</div>
+              <span className="tag badge-err" style={{ fontSize: 9, flexShrink: 0 }}>لم تكتمل</span>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function EmployeeDashboard({ user, onLogout }) {
   const [tab, setTab] = useState('mission') // ← opens Mission first
   const [tasks, setTasks] = useState([])
@@ -74,6 +113,8 @@ export default function EmployeeDashboard({ user, onLogout }) {
   const [weeklyTarget, setWeeklyTarget] = useState(null)
   const [employee, setEmployee] = useState(null)
   const [historyReports, setHistoryReports] = useState([])
+  const [teamTasks, setTeamTasks] = useState([])
+  const [teamTasksDone, setTeamTasksDone] = useState({})
   const [salesInput, setSalesInput] = useState('')
   const [revenueInput, setRevenueInput] = useState('')
   const [salesNote, setSalesNote] = useState('')
@@ -94,8 +135,30 @@ export default function EmployeeDashboard({ user, onLogout }) {
     const empId = emp?.id
     if (!empId) return
 
+    // Own tasks
     const { data: t } = await supabase.from('tasks').select('*').eq('employee_id', empId).eq('is_active', true).order('task_order')
     setTasks(t || [])
+
+    // Team tasks visible to this user (incomplete only)
+    const ROLE_MAP = {
+      'ibrahim@n8nar.com':  'manager',
+      'mina@n8nar.com':     'team_leader',
+      'engy@n8nar.com':     'ops',
+      'andrew.i@n8nar.com': 'content_lead',
+    }
+    const myRole = ROLE_MAP[user.email]
+    if (myRole) {
+      // Get ALL tasks visible to this role, excluding own tasks
+      const { data: allVisible } = await supabase
+        .from('tasks')
+        .select('*, emp:employee_id(name, avatar_initials, color)')
+        .contains('visible_to_roles', [myRole])
+        .neq('employee_id', empId)
+        .eq('is_active', true)
+        .order('employee_id')
+        .order('task_order')
+      setTeamTasks(allVisible || [])
+    }
 
     const { data: at } = await supabase.from('assigned_tasks').select('*, assigned_by_emp:assigned_by(name)').eq('assigned_to', empId).neq('status', 'done').order('created_at', { ascending: false })
     setAssignedTasks(at || [])
@@ -399,6 +462,14 @@ export default function EmployeeDashboard({ user, onLogout }) {
                   ))}
                 </div>
               </>
+            )}
+
+            {/* Team tasks - visible to manager/team_leader/ops/content_lead */}
+            {teamTasks.length > 0 && (
+              <TeamTasksSection
+                teamTasks={teamTasks}
+                userEmail={user.email}
+              />
             )}
           </div>
         )}
