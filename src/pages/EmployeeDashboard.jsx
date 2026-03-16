@@ -64,7 +64,12 @@ const TABS = [
 // Component: shows team tasks incomplete, grouped by employee
 function TeamTasksSection({ teamTasks, userEmail }) {
   const isContentLead = userEmail === 'andrew.i@n8nar.com'
-  const title = isContentLead ? '📱 حالة النشر على السوشيال' : '👥 تاسكات الفريق — غير مكتملة'
+  const isMina = userEmail === 'mina@n8nar.com'
+  const title = isContentLead
+    ? '📱 حالة النشر على السوشيال — غير مكتملة'
+    : isMina
+    ? '👥 تاسكات الميديا — غير مكتملة'
+    : '👥 تاسكات الفريق كله — غير مكتملة'
 
   // Group by employee
   const grouped = {}
@@ -139,16 +144,15 @@ export default function EmployeeDashboard({ user, onLogout }) {
     const { data: t } = await supabase.from('tasks').select('*').eq('employee_id', empId).eq('is_active', true).order('task_order')
     setTasks(t || [])
 
-    // Team tasks visible to this user (incomplete only)
+    // Team tasks visible to this user (excluding own tasks)
     const ROLE_MAP = {
-      'ibrahim@n8nar.com':  'manager',
-      'mina@n8nar.com':     'team_leader',
-      'engy@n8nar.com':     'ops',
-      'andrew.i@n8nar.com': 'content_lead',
+      'ibrahim@n8nar.com':  'manager',       // sees ALL team tasks
+      'engy@n8nar.com':     'ops',           // sees ALL team tasks
+      'mina@n8nar.com':     'team_leader',   // sees أندرو إسحاق + أندرو أيمن + إبرام
+      'andrew.i@n8nar.com': 'content_lead',  // sees social publishing tasks only
     }
     const myRole = ROLE_MAP[user.email]
     if (myRole) {
-      // Get ALL tasks visible to this role, excluding own tasks
       const { data: allVisible } = await supabase
         .from('tasks')
         .select('*, emp:employee_id(name, avatar_initials, color)')
