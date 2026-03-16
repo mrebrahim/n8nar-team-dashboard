@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import MotivationPage from './MotivationPage'
+import ContentSchedule from './ContentSchedule'
 
 // Impact message per employee email
 const IMPACT_MESSAGES = {
@@ -58,7 +59,8 @@ const TABS = [
   { id: 'targets', label: 'تارجتي',      icon: '🎯' },
   { id: 'tasks',   label: 'مهامي',        icon: '✅' },
   { id: 'report',  label: 'رفع تقرير',    icon: '📊' },
-  { id: 'mission', label: 'Mission 1000', icon: '🔥' },
+  { id: 'mission',   label: 'Mission 1000',  icon: '🔥' },
+  { id: 'schedule', label: 'جدول المحتوى', icon: '📅' },
 ]
 
 // Component: shows team tasks incomplete, grouped by employee
@@ -281,6 +283,13 @@ export default function EmployeeDashboard({ user, onLogout }) {
       </div>
 
       <div style={{ maxWidth: 800, margin: '0 auto', padding: tab === 'mission' ? 0 : '20px 16px' }}>
+
+        {/* ══ SCHEDULE TAB ══ */}
+        {tab === 'schedule' && (
+          <div className="fade-in" style={{ margin: '-20px -16px' }}>
+            <ContentSchedule user={user} />
+          </div>
+        )}
 
         {/* ══ MISSION TAB (default) ══ */}
         {tab === 'mission' && (
