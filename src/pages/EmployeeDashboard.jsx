@@ -55,22 +55,24 @@ export default function EmployeeDashboard({ user, onLogout }) {
       setNotes(todayRep.notes || '')
     }
 
-    // Get current week target with live actuals
-    const { data: wt } = await supabase.from('weekly_targets')
+    // Get current week target — fallback to nearest if no current week found
+    let { data: wt } = await supabase.from('weekly_targets')
       .select('*').lte('week_start', today).gte('week_end', today).single()
-    if (wt) {
-      // Get week reach from daily_reach
-      const { data: reachRows } = await supabase.from('daily_reach')
-        .select('total_reach').gte('reach_date', wt.week_start).lte('reach_date', wt.week_end)
-      const weekReach = (reachRows || []).reduce((s, r) => s + (r.total_reach || 0), 0)
-
-      // Get week sales from daily_sales
-      const { data: salesRows } = await supabase.from('daily_sales')
-        .select('sales_count').gte('sale_date', wt.week_start).lte('sale_date', wt.week_end)
-      const weekSales = (salesRows || []).reduce((s, r) => s + (r.sales_count || 0), 0)
-
-      setWeeklyTarget({ ...wt, reach_actual: weekReach, sales_actual: weekSales })
+    if (!wt) {
+      const { data: next } = await supabase.from('weekly_targets')
+        .select('*').gte('week_start', today).order('week_start').limit(1).single()
+      const { data: prev } = await supabase.from('weekly_targets')
+        .select('*').lte('week_end', today).order('week_end', { ascending: false }).limit(1).single()
+      wt = next || prev
     }
+    const activeWeek = wt || { week_number: 1, week_start: '2026-04-01', week_end: '2026-04-06', reach_target: 833333, sales_target: 84 }
+    const { data: reachRows } = await supabase.from('daily_reach')
+      .select('total_reach').gte('reach_date', activeWeek.week_start).lte('reach_date', activeWeek.week_end)
+    const weekReach = (reachRows || []).reduce((s, r) => s + (r.total_reach || 0), 0)
+    const { data: salesRows } = await supabase.from('daily_sales')
+      .select('sales_count').gte('sale_date', activeWeek.week_start).lte('sale_date', activeWeek.week_end)
+    const weekSales = (salesRows || []).reduce((s, r) => s + (r.sales_count || 0), 0)
+    setWeeklyTarget({ ...activeWeek, reach_actual: weekReach, sales_actual: weekSales })
 
     const { data: hist } = await supabase.from('daily_reports').select('*').eq('employee_id', empId).order('report_date', { ascending: false }).limit(7)
     setHistoryReports(hist || [])
