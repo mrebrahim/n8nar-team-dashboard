@@ -445,7 +445,16 @@ export default function EmployeeDashboard({ user, onLogout }) {
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 13, color: isDone ? 'var(--text3)' : 'var(--text1)', textDecoration: isDone ? 'line-through' : 'none', lineHeight: 1.5 }}>{t.task_text}</div>
-                      {t.kpi_target && <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 3 }}><span style={{ color }}>هدف:</span> {t.kpi_target} {t.kpi_unit}</div>}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4, flexWrap: 'wrap' }}>
+                        {t.kpi_target && <span style={{ fontSize: 11, color: 'var(--text3)' }}><span style={{ color }}>هدف:</span> {t.kpi_target} {t.kpi_unit}</span>}
+                        {t.deliver_to && (
+                          <span style={{ fontSize: 10, background: 'rgba(74,144,217,.1)', border: '0.5px solid rgba(74,144,217,.25)', borderRadius: 5, padding: '2px 8px', color: 'var(--blue)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                            <span style={{ opacity: .7 }}>يُسلَّم إلى:</span>
+                            <span style={{ fontWeight: 700 }}>{t.deliver_to}</span>
+                            {t.deliver_by && <span style={{ opacity: .6 }}>· {t.deliver_by}</span>}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     {isDone && <span className="tag badge-ok" style={{ flexShrink: 0, marginTop: 2, fontSize: 10 }}>✓</span>}
                   </div>
@@ -502,7 +511,16 @@ export default function EmployeeDashboard({ user, onLogout }) {
                     <div className={`check-circle ${done[t.id] ? 'done' : ''}`} onClick={() => toggleTask(t.id)}>
                       {done[t.id] && <svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 5l2.5 2.5L8 3" stroke="#fff" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                     </div>
-                    <div style={{ fontSize: 13, flex: 1 }}>{t.task_text}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13 }}>{t.task_text}</div>
+                      {t.deliver_to && (
+                        <span style={{ fontSize: 10, background: 'rgba(74,144,217,.1)', border: '0.5px solid rgba(74,144,217,.2)', borderRadius: 5, padding: '2px 8px', color: 'var(--blue)', display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                          <span style={{ opacity: .7 }}>يُسلَّم إلى:</span>
+                          <span style={{ fontWeight: 700 }}>{t.deliver_to}</span>
+                          {t.deliver_by && <span style={{ opacity: .6 }}>· {t.deliver_by}</span>}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   {t.kpi_target && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingRight: 30 }}>

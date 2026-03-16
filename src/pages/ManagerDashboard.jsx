@@ -349,8 +349,16 @@ export default function ManagerDashboard({ user, onLogout }) {
                         <div style={{ width: 18, height: 18, borderRadius: '50%', background: comp?.is_done ? 'var(--green)' : 'var(--bg3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                           {comp?.is_done && <svg width="8" height="8" viewBox="0 0 10 10"><path d="M2 5l2.5 2.5L8 3" stroke="#fff" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                         </div>
-                        <div style={{ flex: 1, fontSize: 12, color: comp?.is_done ? 'var(--text3)' : 'var(--text1)' }}>{t.task_text}</div>
-                        {t.kpi_target && <span style={{ fontSize: 10, color: comp?.actual_value ? 'var(--green)' : 'var(--text3)', fontFamily: 'var(--mono)' }}>{comp?.actual_value || 0}/{t.kpi_target}</span>}
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 12, color: comp?.is_done ? 'var(--text3)' : 'var(--text1)' }}>{t.task_text}</div>
+                          {t.deliver_to && (
+                            <span style={{ fontSize: 10, background: 'rgba(74,144,217,.08)', border: '0.5px solid rgba(74,144,217,.2)', borderRadius: 4, padding: '1px 7px', color: 'var(--blue)', display: 'inline-flex', alignItems: 'center', gap: 3, marginTop: 3 }}>
+                              <span style={{ opacity:.7 }}>يُسلَّم إلى:</span> <b>{t.deliver_to}</b>
+                              {t.deliver_by && <span style={{ opacity:.5 }}>· {t.deliver_by}</span>}
+                            </span>
+                          )}
+                        </div>
+                        {t.kpi_target && <span style={{ fontSize: 10, color: comp?.actual_value ? 'var(--green)' : 'var(--text3)', fontFamily: 'var(--mono)', flexShrink:0 }}>{comp?.actual_value || 0}/{t.kpi_target}</span>}
                       </div>
                     )
                   })}
