@@ -55,6 +55,8 @@ const IMPACT_MESSAGES = {
   },
 }
 
+const CAN_ASSIGN_EMAILS = ['ibrahim@n8nar.com','mina@n8nar.com','engy@n8nar.com','andrew.i@n8nar.com']
+
 const TABS = [
   { id: 'targets', label: 'تارجتي',      icon: '🎯' },
   { id: 'tasks',   label: 'مهامي',        icon: '✅' },
@@ -122,6 +124,16 @@ export default function EmployeeDashboard({ user, onLogout }) {
   const [historyReports, setHistoryReports] = useState([])
   const [teamTasks, setTeamTasks] = useState([])
   const [teamTasksDone, setTeamTasksDone] = useState({})
+  const [allEmployees, setAllEmployees] = useState([])
+  // Assign form
+  const [aTitle, setATitle] = useState('')
+  const [aDesc, setADesc] = useState('')
+  const [aTo, setATo] = useState('')
+  const [aDue, setADue] = useState('')
+  const [aPriority, setAPriority] = useState('medium')
+  const [aSaving, setASaving] = useState(false)
+  const [aSaved, setASaved] = useState(false)
+  const [myAssignedOut, setMyAssignedOut] = useState([])
   const [salesInput, setSalesInput] = useState('')
   const [revenueInput, setRevenueInput] = useState('')
   const [salesNote, setSalesNote] = useState('')
@@ -196,6 +208,19 @@ export default function EmployeeDashboard({ user, onLogout }) {
     const { data: hist } = await supabase.from('daily_reports').select('*').eq('employee_id', empId).order('report_date', { ascending: false }).limit(7)
     setHistoryReports(hist || [])
 
+    // Load all employees for assign dropdown (excluding self)
+    const { data: emps } = await supabase.from('employees').select('id,name,role,avatar_initials,color').neq('id', empId).neq('is_manager', true).order('name')
+    setAllEmployees(emps || [])
+
+    // Load tasks I assigned to others
+    if (CAN_ASSIGN_EMAILS.includes(user.email)) {
+      const { data: myOut } = await supabase.from('assigned_tasks')
+        .select('*, assigned_to_emp:assigned_to(name,avatar_initials,color)')
+        .eq('assigned_by', empId)
+        .order('created_at', { ascending: false })
+      setMyAssignedOut(myOut || [])
+    }
+
     if (isEngy) {
       const { data: ts } = await supabase.from('daily_sales').select('*').eq('sale_date', today).single()
       setTodaySales(ts)
@@ -219,6 +244,26 @@ export default function EmployeeDashboard({ user, onLogout }) {
   async function markAssignedDone(taskId) {
     await supabase.from('assigned_tasks').update({ status: 'done' }).eq('id', taskId)
     setAssignedTasks(prev => prev.filter(t => t.id !== taskId))
+  }
+
+  async function submitAssign(e) {
+    e.preventDefault()
+    if (!aTitle || !aTo || !employee) return
+    setASaving(true)
+    await supabase.from('assigned_tasks').insert({
+      title: aTitle, description: aDesc || null,
+      assigned_to: aTo, assigned_by: employee.id,
+      due_date: aDue || null, priority: aPriority, status: 'pending'
+    })
+    setATitle(''); setADesc(''); setATo(''); setADue(''); setAPriority('medium')
+    setASaving(false); setASaved(true)
+    setTimeout(() => setASaved(false), 2500)
+    loadAll()
+  }
+
+  async function deleteMyTask(id) {
+    await supabase.from('assigned_tasks').delete().eq('id', id)
+    setMyAssignedOut(prev => prev.filter(t => t.id !== id))
   }
 
   async function submitReport() {
@@ -271,9 +316,9 @@ export default function EmployeeDashboard({ user, onLogout }) {
 
       {/* Tabs */}
       <div style={{ background: 'var(--bg1)', borderBottom: '0.5px solid var(--border)', padding: '0 16px', display: 'flex', gap: 2, overflowX: 'auto' }}>
-        {TABS.map(t => (
+        {[...TABS, ...(CAN_ASSIGN_EMAILS.includes(user.email) ? [{ id: 'assign', label: 'إسناد مهام', icon: '⚡' }] : [])].map(t => (
           <button key={t.id} className={`nav-btn ${tab === t.id ? 'active' : ''}`} onClick={() => setTab(t.id)}
-            style={{ padding: '12px 14px', borderBottom: tab === t.id ? `2px solid ${t.id === 'mission' ? '#F1C40F' : color}` : '2px solid transparent', color: tab === t.id ? (t.id === 'mission' ? '#F1C40F' : color) : 'var(--text3)', borderRadius: 0, whiteSpace: 'nowrap', fontSize: 12 }}>
+            style={{ padding: '12px 14px', borderBottom: tab === t.id ? `2px solid ${t.id === 'mission' ? '#F1C40F' : t.id === 'assign' ? '#F5A623' : color}` : '2px solid transparent', color: tab === t.id ? (t.id === 'mission' ? '#F1C40F' : t.id === 'assign' ? '#F5A623' : color) : 'var(--text3)', borderRadius: 0, whiteSpace: 'nowrap', fontSize: 12 }}>
             {t.icon} {t.label}
             {t.id === 'tasks' && assignedTasks.length > 0 && (
               <span style={{ background: '#E74C3C', color: '#fff', borderRadius: '50%', width: 16, height: 16, fontSize: 9, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginRight: 4 }}>{assignedTasks.length}</span>
@@ -288,6 +333,97 @@ export default function EmployeeDashboard({ user, onLogout }) {
         {tab === 'schedule' && (
           <div className="fade-in" style={{ margin: '-20px -16px' }}>
             <ContentSchedule user={user} />
+          </div>
+        )}
+
+        {/* ══ ASSIGN TAB ══ */}
+        {tab === 'assign' && CAN_ASSIGN_EMAILS.includes(user.email) && (
+          <div className="fade-in">
+            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>إسناد مهمة للفريق</div>
+            <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 16 }}>أنت: {user.name}</div>
+
+            {/* Form */}
+            <div className="card" style={{ marginBottom: 14 }}>
+              <form onSubmit={submitAssign}>
+                <div style={{ display: 'grid', gap: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 5 }}>عنوان المهمة *</div>
+                    <input value={aTitle} onChange={e => setATitle(e.target.value)} placeholder="مثال: تصوير Reel للبوست الجديد" required />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 5 }}>التفاصيل</div>
+                    <textarea value={aDesc} onChange={e => setADesc(e.target.value)} rows={2} placeholder="تفاصيل إضافية..." style={{ resize: 'vertical' }} />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div>
+                      <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 5 }}>سند لـ *</div>
+                      <select value={aTo} onChange={e => setATo(e.target.value)} required
+                        style={{ width: '100%', padding: '9px 11px', background: 'var(--bg2)', border: '0.5px solid var(--border)', borderRadius: 8, color: 'var(--text1)', fontSize: 13, fontFamily: 'var(--font)' }}>
+                        <option value="">اختار موظف...</option>
+                        {allEmployees.map(e => <option key={e.id} value={e.id}>{e.name} — {e.role}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 5 }}>الأولوية</div>
+                      <select value={aPriority} onChange={e => setAPriority(e.target.value)}
+                        style={{ width: '100%', padding: '9px 11px', background: 'var(--bg2)', border: '0.5px solid var(--border)', borderRadius: 8, color: 'var(--text1)', fontSize: 13, fontFamily: 'var(--font)' }}>
+                        <option value="low">عادي</option>
+                        <option value="medium">متوسط</option>
+                        <option value="high">عاجل 🔴</option>
+                      </select>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 5 }}>موعد التسليم</div>
+                      <input type="date" value={aDue} onChange={e => setADue(e.target.value)} />
+                    </div>
+                  </div>
+                  {aSaved && (
+                    <div style={{ background: 'rgba(46,204,113,.1)', border: '0.5px solid rgba(46,204,113,.3)', borderRadius: 8, padding: '9px 12px', color: 'var(--green)', fontSize: 12, textAlign: 'center' }}>
+                      ✓ تم إسناد المهمة للموظف!
+                    </div>
+                  )}
+                  <button className="primary-btn" type="submit" disabled={aSaving} style={{ background: '#F5A623' }}>
+                    {aSaving ? 'جاري الإسناد...' : '⚡ إسناد المهمة'}
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* My assigned tasks */}
+            <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, letterSpacing: 1, marginBottom: 10 }}>
+              المهام اللي أسندتها ({myAssignedOut.length})
+            </div>
+            {myAssignedOut.length === 0 ? (
+              <div className="card" style={{ textAlign: 'center', padding: 24, color: 'var(--text3)', fontSize: 13 }}>لم تسند أي مهام بعد</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {myAssignedOut.map(t => (
+                  <div key={t.id} className="card" style={{ padding: '12px 14px', borderColor: t.status === 'done' ? 'rgba(46,204,113,.2)' : t.priority === 'high' ? 'rgba(231,76,60,.25)' : 'var(--border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                      <div style={{ width: 30, height: 30, borderRadius: '50%', background: t.assigned_to_emp?.color || '#666', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
+                        {t.assigned_to_emp?.avatar_initials || '?'}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 3 }}>
+                          <span style={{ fontSize: 13, fontWeight: 600 }}>{t.title}</span>
+                          <span className={`tag ${t.status === 'done' ? 'badge-ok' : t.priority === 'high' ? 'badge-err' : t.priority === 'medium' ? 'badge-warn' : 'badge-neutral'}`} style={{ fontSize: 9 }}>
+                            {t.status === 'done' ? '✓ منجزة' : t.priority === 'high' ? 'عاجل' : t.priority === 'medium' ? 'متوسط' : 'عادي'}
+                          </span>
+                        </div>
+                        {t.description && <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>{t.description}</div>}
+                        <div style={{ fontSize: 10, color: 'var(--text3)' }}>
+                          لـ: <b style={{ color: 'var(--text2)' }}>{t.assigned_to_emp?.name}</b>
+                          {t.due_date && <span style={{ color: '#F5A623', marginRight: 8 }}>· موعد: {t.due_date}</span>}
+                        </div>
+                      </div>
+                      {t.status !== 'done' && (
+                        <button onClick={() => deleteMyTask(t.id)} style={{ background: 'rgba(231,76,60,.1)', border: 'none', color: 'var(--red)', borderRadius: 6, padding: '4px 8px', fontSize: 11, cursor: 'pointer', flexShrink: 0 }}>حذف</button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
