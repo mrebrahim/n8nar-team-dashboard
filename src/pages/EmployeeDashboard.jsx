@@ -2,15 +2,67 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import MotivationPage from './MotivationPage'
 
+// Impact message per employee email
+const IMPACT_MESSAGES = {
+  'mina@n8nar.com': {
+    headline: 'كل بوست بجودة عالية = 100 مبيعة 🔥',
+    sub: 'بوست قوي → 100K reach → 1,000 lead → 100 مبيعة = 1,000 EGP في البونص',
+    color: '#4A90D9',
+    icon: '📝',
+  },
+  'andrew.i@n8nar.com': {
+    headline: 'كل محتوى Reel قوي = 2 مبيعة 🎬',
+    sub: 'Reel محتوى → 10K views → 100 lead → 2 مبيعة = 20 EGP في البونص',
+    color: '#9B59B6',
+    icon: '🎬',
+  },
+  'andrew.a@n8nar.com': {
+    headline: 'كل مونتاج قوي = 10 مبيعات ✂️',
+    sub: 'Reel مونتاج → 50K views → 500 lead → 10 مبيعات = 100 EGP في البونص',
+    color: '#E67E22',
+    icon: '✂️',
+  },
+  'ibram@n8nar.com': {
+    headline: 'كل مونتاج قوي = 10 مبيعات ✂️',
+    sub: 'Reel مونتاج → 50K views → 500 lead → 10 مبيعات = 100 EGP في البونص',
+    color: '#E67E22',
+    icon: '✂️',
+  },
+  'mariam@n8nar.com': {
+    headline: '50 مكالمة + 100 DM = 3 مبيعات يومياً 📞',
+    sub: 'تواصل مستمر مع العملاء → دعم قوي للعملاء → upsell 2 كورس + 10 أصدقاء',
+    color: '#27AE60',
+    icon: '📞',
+  },
+  'engy@n8nar.com': {
+    headline: 'دعم العملاء الممتاز = مبيعات مضاعفة 💬',
+    sub: 'دعم قوي → العميل يشتري 2 كورس إضافي + يجيب 10 أصدقاء',
+    color: '#1ABC9C',
+    icon: '💬',
+  },
+  'bishoy@n8nar.com': {
+    headline: 'كل Email + مقالة + WhatsApp = 3 مبيعات يومياً ⚙️',
+    sub: 'Email campaign → 1 مبيعة · WhatsApp negotiation → 1 مبيعة · مقالة SEO → 1 مبيعة',
+    color: '#185FA5',
+    icon: '⚙️',
+  },
+  'ibrahim@n8nar.com': {
+    headline: 'كل فيديو YouTube = 2 مبيعات 🎥',
+    sub: 'فيديو YouTube تعليمي → 2 مبيعة · FB Ads creative → 10 مبيعات · فكرة عرض جديدة → upsell',
+    color: '#1B3A6B',
+    icon: '🎥',
+  },
+}
+
 const TABS = [
-  { id: 'targets', label: 'تارجتي', icon: '🎯' },
-  { id: 'tasks',   label: 'مهامي',  icon: '✅' },
-  { id: 'report',  label: 'رفع تقرير', icon: '📊' },
+  { id: 'targets', label: 'تارجتي',      icon: '🎯' },
+  { id: 'tasks',   label: 'مهامي',        icon: '✅' },
+  { id: 'report',  label: 'رفع تقرير',    icon: '📊' },
   { id: 'mission', label: 'Mission 1000', icon: '🔥' },
 ]
 
 export default function EmployeeDashboard({ user, onLogout }) {
-  const [tab, setTab] = useState('targets')
+  const [tab, setTab] = useState('mission') // ← opens Mission first
   const [tasks, setTasks] = useState([])
   const [assignedTasks, setAssignedTasks] = useState([])
   const [done, setDone] = useState({})
@@ -22,7 +74,6 @@ export default function EmployeeDashboard({ user, onLogout }) {
   const [weeklyTarget, setWeeklyTarget] = useState(null)
   const [employee, setEmployee] = useState(null)
   const [historyReports, setHistoryReports] = useState([])
-  // إنجي only
   const [salesInput, setSalesInput] = useState('')
   const [revenueInput, setRevenueInput] = useState('')
   const [salesNote, setSalesNote] = useState('')
@@ -32,6 +83,8 @@ export default function EmployeeDashboard({ user, onLogout }) {
 
   const today = new Date().toISOString().split('T')[0]
   const isEngy = user.email === 'engy@n8nar.com'
+  const color = user.color || '#4A90D9'
+  const impact = IMPACT_MESSAGES[user.email]
 
   useEffect(() => { loadAll() }, [])
 
@@ -57,29 +110,23 @@ export default function EmployeeDashboard({ user, onLogout }) {
       setNotes(todayRep.notes || '')
     }
 
-    // Get current week target — fallback to nearest if no current week found
-    let { data: wt } = await supabase.from('weekly_targets')
-      .select('*').lte('week_start', today).gte('week_end', today).single()
+    // Weekly target - fallback to nearest
+    let { data: wt } = await supabase.from('weekly_targets').select('*').lte('week_start', today).gte('week_end', today).single()
     if (!wt) {
-      const { data: next } = await supabase.from('weekly_targets')
-        .select('*').gte('week_start', today).order('week_start').limit(1).single()
-      const { data: prev } = await supabase.from('weekly_targets')
-        .select('*').lte('week_end', today).order('week_end', { ascending: false }).limit(1).single()
+      const { data: next } = await supabase.from('weekly_targets').select('*').gte('week_start', today).order('week_start').limit(1).single()
+      const { data: prev } = await supabase.from('weekly_targets').select('*').lte('week_end', today).order('week_end', { ascending: false }).limit(1).single()
       wt = next || prev
     }
-    const activeWeek = wt || { week_number: 1, week_start: '2026-04-01', week_end: '2026-04-06', reach_target: 833333, sales_target: 84 }
-    const { data: reachRows } = await supabase.from('daily_reach')
-      .select('total_reach').gte('reach_date', activeWeek.week_start).lte('reach_date', activeWeek.week_end)
+    const activeWeek = wt || { week_number: 1, week_start: '2026-04-01', week_end: '2026-04-07', reach_target: 833333, sales_target: 84 }
+    const { data: reachRows } = await supabase.from('daily_reach').select('total_reach').gte('reach_date', activeWeek.week_start).lte('reach_date', activeWeek.week_end)
     const weekReach = (reachRows || []).reduce((s, r) => s + (r.total_reach || 0), 0)
-    const { data: salesRows } = await supabase.from('daily_sales')
-      .select('sales_count').gte('sale_date', activeWeek.week_start).lte('sale_date', activeWeek.week_end)
+    const { data: salesRows } = await supabase.from('daily_sales').select('sales_count').gte('sale_date', activeWeek.week_start).lte('sale_date', activeWeek.week_end)
     const weekSales = (salesRows || []).reduce((s, r) => s + (r.sales_count || 0), 0)
     setWeeklyTarget({ ...activeWeek, reach_actual: weekReach, sales_actual: weekSales })
 
     const { data: hist } = await supabase.from('daily_reports').select('*').eq('employee_id', empId).order('report_date', { ascending: false }).limit(7)
     setHistoryReports(hist || [])
 
-    // إنجي: load today's sales
     if (isEngy) {
       const { data: ts } = await supabase.from('daily_sales').select('*').eq('sale_date', today).single()
       setTodaySales(ts)
@@ -122,20 +169,10 @@ export default function EmployeeDashboard({ user, onLogout }) {
   async function submitSales() {
     if (!employee) return
     setSalesSaving(true)
-    await supabase.from('daily_sales').upsert({
-      sale_date: today,
-      sales_count: parseInt(salesInput) || 0,
-      revenue_usd: parseFloat(revenueInput) || 0,
-      notes: salesNote,
-      added_by: employee.id,
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'sale_date' })
-
-    // Update team_targets total sales
+    await supabase.from('daily_sales').upsert({ sale_date: today, sales_count: parseInt(salesInput) || 0, revenue_usd: parseFloat(revenueInput) || 0, notes: salesNote, added_by: employee.id, updated_at: new Date().toISOString() }, { onConflict: 'sale_date' })
     const { data: allSales } = await supabase.from('daily_sales').select('sales_count')
     const total = (allSales || []).reduce((s, r) => s + (r.sales_count || 0), 0)
     await supabase.from('team_targets').update({ current_value: total }).eq('metric_key', 'total_sales')
-
     setSalesSaving(false); setSalesSaved(true)
     setTimeout(() => setSalesSaved(false), 3000)
     loadAll()
@@ -143,8 +180,6 @@ export default function EmployeeDashboard({ user, onLogout }) {
 
   const completedCount = tasks.filter(t => done[t.id]).length
   const completionPct = tasks.length > 0 ? Math.round(completedCount / tasks.length * 100) : 0
-  const color = user.color || '#4A90D9'
-
   const wReachPct = weeklyTarget ? Math.min(Math.round((weeklyTarget.reach_actual / weeklyTarget.reach_target) * 100), 100) : 0
   const wSalesPct = weeklyTarget ? Math.min(Math.round((weeklyTarget.sales_actual / weeklyTarget.sales_target) * 100), 100) : 0
 
@@ -166,10 +201,10 @@ export default function EmployeeDashboard({ user, onLogout }) {
       </div>
 
       {/* Tabs */}
-      <div style={{ background: 'var(--bg1)', borderBottom: '0.5px solid var(--border)', padding: '0 20px', display: 'flex', gap: 4 }}>
+      <div style={{ background: 'var(--bg1)', borderBottom: '0.5px solid var(--border)', padding: '0 16px', display: 'flex', gap: 2, overflowX: 'auto' }}>
         {TABS.map(t => (
           <button key={t.id} className={`nav-btn ${tab === t.id ? 'active' : ''}`} onClick={() => setTab(t.id)}
-            style={{ padding: '12px 14px', borderBottom: tab === t.id ? `2px solid ${color}` : '2px solid transparent', color: tab === t.id ? color : 'var(--text3)', borderRadius: 0 }}>
+            style={{ padding: '12px 14px', borderBottom: tab === t.id ? `2px solid ${t.id === 'mission' ? '#F1C40F' : color}` : '2px solid transparent', color: tab === t.id ? (t.id === 'mission' ? '#F1C40F' : color) : 'var(--text3)', borderRadius: 0, whiteSpace: 'nowrap', fontSize: 12 }}>
             {t.icon} {t.label}
             {t.id === 'tasks' && assignedTasks.length > 0 && (
               <span style={{ background: '#E74C3C', color: '#fff', borderRadius: '50%', width: 16, height: 16, fontSize: 9, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginRight: 4 }}>{assignedTasks.length}</span>
@@ -178,11 +213,39 @@ export default function EmployeeDashboard({ user, onLogout }) {
         ))}
       </div>
 
-      <div style={{ maxWidth: 800, margin: '0 auto', padding: '20px 16px' }}>
+      <div style={{ maxWidth: 800, margin: '0 auto', padding: tab === 'mission' ? 0 : '20px 16px' }}>
+
+        {/* ══ MISSION TAB (default) ══ */}
+        {tab === 'mission' && (
+          <div className="fade-in">
+            <MotivationPage user={user} />
+          </div>
+        )}
 
         {/* ══ TARGETS TAB ══ */}
         {tab === 'targets' && (
           <div className="fade-in">
+            {/* Impact Banner - personal */}
+            {impact && (
+              <div style={{
+                background: `linear-gradient(135deg, ${impact.color}12, ${impact.color}06)`,
+                border: `0.5px solid ${impact.color}40`,
+                borderRight: `3px solid ${impact.color}`,
+                borderRadius: 12, padding: '14px 18px', marginBottom: 16
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 28 }}>{impact.icon}</span>
+                  <div>
+                    <div style={{
+                      fontSize: 16, fontWeight: 800, color: impact.color,
+                      letterSpacing: .5, marginBottom: 4,
+                      fontFamily: "'Cairo', sans-serif"
+                    }}>{impact.headline}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.6 }}>{impact.sub}</div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* My daily completion */}
             <div className="card" style={{ marginBottom: 14, borderColor: color + '40' }}>
@@ -199,103 +262,50 @@ export default function EmployeeDashboard({ user, onLogout }) {
               <div className="prog-bar" style={{ height: 8 }}>
                 <div className="prog-fill" style={{ width: completionPct + '%', background: completionPct >= 100 ? 'var(--green)' : completionPct >= 70 ? 'var(--amber)' : color }} />
               </div>
-              {completionPct >= 100 && (
-                <div style={{ marginTop: 10, padding: '8px 12px', background: 'rgba(46,204,113,.1)', border: '0.5px solid rgba(46,204,113,.3)', borderRadius: 8, fontSize: 12, color: 'var(--green)', textAlign: 'center' }}>
-                  🎉 أتممت كل مهامك اليوم!
-                </div>
-              )}
+              {completionPct >= 100 && <div style={{ marginTop: 10, padding: '8px 12px', background: 'rgba(46,204,113,.1)', border: '0.5px solid rgba(46,204,113,.3)', borderRadius: 8, fontSize: 12, color: 'var(--green)', textAlign: 'center' }}>🎉 أتممت كل مهامك اليوم!</div>}
             </div>
 
             {/* إنجي sales input */}
             {isEngy && (
               <div className="card" style={{ marginBottom: 14, borderColor: 'rgba(46,204,113,.3)' }}>
                 <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4, color: 'var(--green)' }}>💰 تسجيل مبيعات اليوم</div>
-                <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 12 }}>
-                  {todaySales ? `✓ تم التسجيل — ${todaySales.sales_count} مبيعة` : 'لم يُسجَّل بعد'}
-                </div>
+                <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 12 }}>{todaySales ? `✓ تم التسجيل — ${todaySales.sales_count} مبيعة` : 'لم يُسجَّل بعد'}</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
-                  <div>
-                    <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 5 }}>عدد المبيعات</div>
-                    <input type="number" value={salesInput} onChange={e => setSalesInput(e.target.value)} placeholder="مثال: 11" />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 5 }}>الإيراد ($)</div>
-                    <input type="number" value={revenueInput} onChange={e => setRevenueInput(e.target.value)} placeholder="مثال: 660" />
-                  </div>
+                  <div><div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 5 }}>عدد المبيعات</div><input type="number" value={salesInput} onChange={e => setSalesInput(e.target.value)} placeholder="مثال: 11" /></div>
+                  <div><div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 5 }}>الإيراد ($)</div><input type="number" value={revenueInput} onChange={e => setRevenueInput(e.target.value)} placeholder="مثال: 660" /></div>
                 </div>
-                <div style={{ marginBottom: 10 }}>
-                  <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 5 }}>ملاحظة</div>
-                  <input type="text" value={salesNote} onChange={e => setSalesNote(e.target.value)} placeholder="أي ملاحظة..." />
-                </div>
-                {salesSaved && (
-                  <div style={{ background: 'rgba(46,204,113,.1)', border: '0.5px solid rgba(46,204,113,.3)', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: 'var(--green)', textAlign: 'center', marginBottom: 8 }}>
-                    ✓ تم تسجيل المبيعات وتحديث التارجت الأسبوعي!
-                  </div>
-                )}
-                <button onClick={submitSales} disabled={salesSaving} className="primary-btn" style={{ background: 'var(--green)' }}>
-                  {salesSaving ? 'جاري الحفظ...' : todaySales ? '↻ تحديث مبيعات اليوم' : '+ تسجيل مبيعات اليوم'}
-                </button>
+                <div style={{ marginBottom: 10 }}><div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 5 }}>ملاحظة</div><input type="text" value={salesNote} onChange={e => setSalesNote(e.target.value)} placeholder="أي ملاحظة..." /></div>
+                {salesSaved && <div style={{ background: 'rgba(46,204,113,.1)', border: '0.5px solid rgba(46,204,113,.3)', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: 'var(--green)', textAlign: 'center', marginBottom: 8 }}>✓ تم تسجيل المبيعات وتحديث التارجت الأسبوعي!</div>}
+                <button onClick={submitSales} disabled={salesSaving} className="primary-btn" style={{ background: 'var(--green)' }}>{salesSaving ? 'جاري الحفظ...' : todaySales ? '↻ تحديث مبيعات اليوم' : '+ تسجيل مبيعات اليوم'}</button>
               </div>
             )}
 
-            {/* Weekly Target — auto updated */}
+            {/* Weekly Target Cards */}
             {weeklyTarget && (
               <div style={{ marginBottom: 14 }}>
-                {/* Section header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                  <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, letterSpacing: 1 }}>
-                    هدف الفريق الكلي — الأسبوع {weeklyTarget.week_number}
-                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, letterSpacing: 1 }}>هدف الفريق الكلي — الأسبوع {weeklyTarget.week_number}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ fontSize: 10, color: 'var(--text3)' }}>{weeklyTarget.week_start} → {weeklyTarget.week_end}</span>
                     <span className="tag badge-neutral" style={{ fontSize: 9 }}>⟳ يتحدث تلقائياً</span>
                   </div>
                 </div>
-
-                {/* Big cards — exact style matching the image */}
                 <div className="grid2">
-                  {/* Sales card */}
-                  <div style={{
-                    background: 'var(--bg1)',
-                    border: '0.5px solid var(--border)',
-                    borderRadius: 14,
-                    padding: '18px 20px',
-                    position: 'relative',
-                    overflow: 'hidden'
-                  }}>
+                  <div style={{ background: 'var(--bg1)', border: '0.5px solid var(--border)', borderRadius: 14, padding: '18px 20px', position: 'relative', overflow: 'hidden' }}>
                     <div style={{ position: 'absolute', top: -20, left: -20, width: 80, height: 80, borderRadius: '50%', background: 'radial-gradient(circle, rgba(46,204,113,.1), transparent)', pointerEvents: 'none' }} />
                     <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 2, textAlign: 'left' }}>إجمالي المبيعات</div>
-                    <div style={{ fontSize: 30, fontWeight: 800, color: wSalesPct >= 100 ? 'var(--green)' : 'var(--text1)', textAlign: 'left', direction: 'ltr', marginBottom: 2 }}>
-                      {weeklyTarget.sales_actual}
-                      <span style={{ fontSize: 14, color: 'var(--text3)', fontWeight: 400 }}> / {weeklyTarget.sales_target}</span>
-                    </div>
-                    <div className="prog-bar" style={{ height: 4, margin: '10px 0 8px' }}>
-                      <div className="prog-fill" style={{ width: wSalesPct + '%', background: wSalesPct >= 100 ? 'var(--green)' : '#4A90D9', boxShadow: wSalesPct >= 100 ? '0 0 8px rgba(46,204,113,.5)' : 'none' }} />
-                    </div>
+                    <div style={{ fontSize: 30, fontWeight: 800, color: wSalesPct >= 100 ? 'var(--green)' : 'var(--text1)', textAlign: 'left', direction: 'ltr', marginBottom: 2 }}>{weeklyTarget.sales_actual}<span style={{ fontSize: 14, color: 'var(--text3)', fontWeight: 400 }}> / {weeklyTarget.sales_target}</span></div>
+                    <div className="prog-bar" style={{ height: 4, margin: '10px 0 8px' }}><div className="prog-fill" style={{ width: wSalesPct + '%', background: wSalesPct >= 100 ? 'var(--green)' : '#4A90D9', boxShadow: wSalesPct >= 100 ? '0 0 8px rgba(46,204,113,.5)' : 'none' }} /></div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10 }}>
                       <span style={{ color: wSalesPct >= 100 ? 'var(--green)' : wSalesPct >= 70 ? 'var(--amber)' : 'var(--text3)' }}>{wSalesPct}% من الهدف</span>
                       <span style={{ color: 'var(--text3)' }}>84 مبيعة/أسبوع</span>
                     </div>
                   </div>
-
-                  {/* Reach card */}
-                  <div style={{
-                    background: 'var(--bg1)',
-                    border: '0.5px solid var(--border)',
-                    borderRadius: 14,
-                    padding: '18px 20px',
-                    position: 'relative',
-                    overflow: 'hidden'
-                  }}>
+                  <div style={{ background: 'var(--bg1)', border: '0.5px solid var(--border)', borderRadius: 14, padding: '18px 20px', position: 'relative', overflow: 'hidden' }}>
                     <div style={{ position: 'absolute', top: -20, left: -20, width: 80, height: 80, borderRadius: '50%', background: 'radial-gradient(circle, rgba(74,144,217,.08), transparent)', pointerEvents: 'none' }} />
                     <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 2, textAlign: 'left' }}>إجمالي الـ Reach</div>
-                    <div style={{ fontSize: 30, fontWeight: 800, color: wReachPct >= 100 ? 'var(--green)' : 'var(--text1)', textAlign: 'left', direction: 'ltr', marginBottom: 2 }}>
-                      {Number(Math.round(weeklyTarget.reach_actual)).toLocaleString()}
-                      <span style={{ fontSize: 14, color: 'var(--text3)', fontWeight: 400 }}> / {Number(weeklyTarget.reach_target).toLocaleString()}</span>
-                    </div>
-                    <div className="prog-bar" style={{ height: 4, margin: '10px 0 8px' }}>
-                      <div className="prog-fill" style={{ width: wReachPct + '%', background: wReachPct >= 100 ? 'var(--green)' : '#4A90D9', boxShadow: wReachPct >= 100 ? '0 0 8px rgba(46,204,113,.5)' : '0 0 6px rgba(74,144,217,.4)' }} />
-                    </div>
+                    <div style={{ fontSize: 30, fontWeight: 800, color: wReachPct >= 100 ? 'var(--green)' : 'var(--text1)', textAlign: 'left', direction: 'ltr', marginBottom: 2 }}>{Number(Math.round(weeklyTarget.reach_actual)).toLocaleString()}<span style={{ fontSize: 14, color: 'var(--text3)', fontWeight: 400 }}> / {Number(weeklyTarget.reach_target).toLocaleString()}</span></div>
+                    <div className="prog-bar" style={{ height: 4, margin: '10px 0 8px' }}><div className="prog-fill" style={{ width: wReachPct + '%', background: wReachPct >= 100 ? 'var(--green)' : '#4A90D9', boxShadow: wReachPct >= 100 ? '0 0 8px rgba(46,204,113,.5)' : '0 0 6px rgba(74,144,217,.4)' }} /></div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10 }}>
                       <span style={{ color: wReachPct >= 100 ? 'var(--green)' : wReachPct >= 70 ? 'var(--amber)' : 'var(--text3)' }}>{wReachPct}% من الهدف</span>
                       <span style={{ color: 'var(--text3)' }}>833,333/أسبوع</span>
@@ -325,6 +335,19 @@ export default function EmployeeDashboard({ user, onLogout }) {
         {/* ══ TASKS TAB ══ */}
         {tab === 'tasks' && (
           <div className="fade-in">
+            {/* Impact reminder in tasks too */}
+            {impact && (
+              <div style={{
+                background: `${impact.color}10`,
+                border: `0.5px solid ${impact.color}30`,
+                borderRadius: 10, padding: '10px 14px', marginBottom: 14,
+                display: 'flex', alignItems: 'center', gap: 10
+              }}>
+                <span style={{ fontSize: 20 }}>{impact.icon}</span>
+                <div style={{ fontSize: 13, fontWeight: 700, color: impact.color }}>{impact.headline}</div>
+              </div>
+            )}
+
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
               <div>
                 <div style={{ fontSize: 16, fontWeight: 700 }}>مهامي اليوم</div>
@@ -358,9 +381,7 @@ export default function EmployeeDashboard({ user, onLogout }) {
             {/* Assigned tasks */}
             {assignedTasks.length > 0 && (
               <>
-                <div style={{ fontSize: 11, color: '#F5A623', marginBottom: 8, fontWeight: 600, letterSpacing: 1 }}>
-                  ⚡ مهام مُسنَدة إليك ({assignedTasks.length})
-                </div>
+                <div style={{ fontSize: 11, color: '#F5A623', marginBottom: 8, fontWeight: 600, letterSpacing: 1 }}>⚡ مهام مُسنَدة إليك ({assignedTasks.length})</div>
                 <div className="card" style={{ borderColor: 'rgba(245,166,35,.3)' }}>
                   {assignedTasks.map((t, i) => (
                     <div key={t.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '11px 0', borderBottom: i < assignedTasks.length - 1 ? '0.5px solid var(--border)' : 'none' }}>
@@ -371,9 +392,7 @@ export default function EmployeeDashboard({ user, onLogout }) {
                         <div style={{ display: 'flex', gap: 8, marginTop: 5, flexWrap: 'wrap' }}>
                           {t.assigned_by_emp && <span style={{ fontSize: 10, color: 'var(--text3)' }}>من: {t.assigned_by_emp.name}</span>}
                           {t.due_date && <span style={{ fontSize: 10, color: '#F5A623' }}>موعد: {t.due_date}</span>}
-                          <span className={`tag ${t.priority === 'high' ? 'badge-err' : t.priority === 'medium' ? 'badge-warn' : 'badge-neutral'}`} style={{ fontSize: 9 }}>
-                            {t.priority === 'high' ? 'عاجل 🔴' : t.priority === 'medium' ? 'متوسط' : 'عادي'}
-                          </span>
+                          <span className={`tag ${t.priority === 'high' ? 'badge-err' : t.priority === 'medium' ? 'badge-warn' : 'badge-neutral'}`} style={{ fontSize: 9 }}>{t.priority === 'high' ? 'عاجل 🔴' : t.priority === 'medium' ? 'متوسط' : 'عادي'}</span>
                         </div>
                       </div>
                     </div>
@@ -389,9 +408,7 @@ export default function EmployeeDashboard({ user, onLogout }) {
           <div className="fade-in">
             <div style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 16, fontWeight: 700 }}>رفع تقرير اليوم</div>
-              <div style={{ fontSize: 11, color: report ? 'var(--green)' : 'var(--text3)', marginTop: 2 }}>
-                {report ? '✓ تم رفع تقرير اليوم — يمكنك التعديل' : 'لم يُرفع بعد'}
-              </div>
+              <div style={{ fontSize: 11, color: report ? 'var(--green)' : 'var(--text3)', marginTop: 2 }}>{report ? '✓ تم رفع تقرير اليوم — يمكنك التعديل' : 'لم يُرفع بعد'}</div>
             </div>
             <div className="card" style={{ marginBottom: 14 }}>
               <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 12, fontWeight: 600, letterSpacing: 1 }}>المهام والأرقام الفعلية</div>
@@ -406,8 +423,7 @@ export default function EmployeeDashboard({ user, onLogout }) {
                   {t.kpi_target && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingRight: 30 }}>
                       <span style={{ fontSize: 11, color: 'var(--text3)', flexShrink: 0 }}>الفعلي:</span>
-                      <input type="number" value={kpiValues[t.id] || ''} onChange={e => setKpiValues(p => ({ ...p, [t.id]: e.target.value }))}
-                        placeholder={`هدف: ${t.kpi_target} ${t.kpi_unit}`} style={{ padding: '6px 10px', fontSize: 12, flex: 1 }} />
+                      <input type="number" value={kpiValues[t.id] || ''} onChange={e => setKpiValues(p => ({ ...p, [t.id]: e.target.value }))} placeholder={`هدف: ${t.kpi_target} ${t.kpi_unit}`} style={{ padding: '6px 10px', fontSize: 12, flex: 1 }} />
                       <span style={{ fontSize: 11, color: 'var(--text3)', flexShrink: 0 }}>{t.kpi_unit}</span>
                     </div>
                   )}
@@ -418,18 +434,10 @@ export default function EmployeeDashboard({ user, onLogout }) {
               <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 8, fontWeight: 600 }}>ملاحظات / عقبات</div>
               <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} placeholder="أي ملاحظة مهمة عن اليوم..." style={{ resize: 'vertical' }} />
             </div>
-            {saved && (
-              <div style={{ background: 'rgba(46,204,113,.1)', border: '0.5px solid rgba(46,204,113,.3)', borderRadius: 10, padding: '12px 16px', marginBottom: 14, color: 'var(--green)', fontSize: 13, textAlign: 'center' }}>✓ تم حفظ التقرير بنجاح!</div>
-            )}
+            {saved && <div style={{ background: 'rgba(46,204,113,.1)', border: '0.5px solid rgba(46,204,113,.3)', borderRadius: 10, padding: '12px 16px', marginBottom: 14, color: 'var(--green)', fontSize: 13, textAlign: 'center' }}>✓ تم حفظ التقرير بنجاح!</div>}
             <button className="primary-btn" onClick={submitReport} disabled={saving} style={{ background: color }}>
               {saving ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}><span style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 1s linear infinite', display: 'inline-block' }} />جاري الحفظ...</span> : report ? 'تحديث التقرير' : 'إرسال التقرير'}
             </button>
-          </div>
-        )}
-        {/* ══ MISSION TAB ══ */}
-        {tab === 'mission' && (
-          <div className="fade-in" style={{ margin: '-20px -16px' }}>
-            <MotivationPage user={user} />
           </div>
         )}
       </div>
