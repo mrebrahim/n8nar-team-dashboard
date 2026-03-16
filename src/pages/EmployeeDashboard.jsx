@@ -236,47 +236,69 @@ export default function EmployeeDashboard({ user, onLogout }) {
 
             {/* Weekly Target — auto updated */}
             {weeklyTarget && (
-              <>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <div style={{ marginBottom: 14 }}>
+                {/* Section header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                   <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, letterSpacing: 1 }}>
-                    التارجت الأسبوعي — الأسبوع {weeklyTarget.week_number}
+                    هدف الفريق الكلي — الأسبوع {weeklyTarget.week_number}
                   </div>
-                  <span className="tag badge-neutral" style={{ fontSize: 9 }}>⟳ يتحدث تلقائياً</span>
-                </div>
-                <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 10 }}>
-                  {weeklyTarget.week_start} → {weeklyTarget.week_end}
-                </div>
-                <div className="grid2" style={{ marginBottom: 14 }}>
-                  <div style={{ background: 'var(--bg1)', border: '0.5px solid rgba(74,144,217,.3)', borderRadius: 12, padding: 16 }}>
-                    <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>📘 Reach هذا الأسبوع</div>
-                    <div style={{ fontSize: 22, fontWeight: 700, color: wReachPct >= 100 ? 'var(--green)' : 'var(--blue)' }}>
-                      {Number(Math.round(weeklyTarget.reach_actual)).toLocaleString()}
-                      <span style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 400 }}> / {Number(weeklyTarget.reach_target).toLocaleString()}</span>
-                    </div>
-                    <div className="prog-bar" style={{ margin: '8px 0 4px' }}>
-                      <div className="prog-fill" style={{ width: wReachPct + '%', background: wReachPct >= 100 ? 'var(--green)' : 'var(--blue)' }} />
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--text3)' }}>
-                      <span style={{ color: wReachPct >= 100 ? 'var(--green)' : wReachPct >= 70 ? 'var(--amber)' : 'var(--text3)' }}>{wReachPct}%</span>
-                      <span>من Windsor.ai</span>
-                    </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 10, color: 'var(--text3)' }}>{weeklyTarget.week_start} → {weeklyTarget.week_end}</span>
+                    <span className="tag badge-neutral" style={{ fontSize: 9 }}>⟳ يتحدث تلقائياً</span>
                   </div>
-                  <div style={{ background: 'var(--bg1)', border: '0.5px solid rgba(46,204,113,.3)', borderRadius: 12, padding: 16 }}>
-                    <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>💰 مبيعات هذا الأسبوع</div>
-                    <div style={{ fontSize: 22, fontWeight: 700, color: wSalesPct >= 100 ? 'var(--green)' : 'var(--amber)' }}>
+                </div>
+
+                {/* Big cards — exact style matching the image */}
+                <div className="grid2">
+                  {/* Sales card */}
+                  <div style={{
+                    background: 'var(--bg1)',
+                    border: '0.5px solid var(--border)',
+                    borderRadius: 14,
+                    padding: '18px 20px',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{ position: 'absolute', top: -20, left: -20, width: 80, height: 80, borderRadius: '50%', background: 'radial-gradient(circle, rgba(46,204,113,.1), transparent)', pointerEvents: 'none' }} />
+                    <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 2, textAlign: 'left' }}>إجمالي المبيعات</div>
+                    <div style={{ fontSize: 30, fontWeight: 800, color: wSalesPct >= 100 ? 'var(--green)' : 'var(--text1)', textAlign: 'left', direction: 'ltr', marginBottom: 2 }}>
                       {weeklyTarget.sales_actual}
-                      <span style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 400 }}> / {weeklyTarget.sales_target}</span>
+                      <span style={{ fontSize: 14, color: 'var(--text3)', fontWeight: 400 }}> / {weeklyTarget.sales_target}</span>
                     </div>
-                    <div className="prog-bar" style={{ margin: '8px 0 4px' }}>
-                      <div className="prog-fill" style={{ width: wSalesPct + '%', background: wSalesPct >= 100 ? 'var(--green)' : 'var(--amber)' }} />
+                    <div className="prog-bar" style={{ height: 4, margin: '10px 0 8px' }}>
+                      <div className="prog-fill" style={{ width: wSalesPct + '%', background: wSalesPct >= 100 ? 'var(--green)' : '#4A90D9', boxShadow: wSalesPct >= 100 ? '0 0 8px rgba(46,204,113,.5)' : 'none' }} />
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--text3)' }}>
-                      <span style={{ color: wSalesPct >= 100 ? 'var(--green)' : wSalesPct >= 70 ? 'var(--amber)' : 'var(--text3)' }}>{wSalesPct}%</span>
-                      <span>من تقارير إنجي</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10 }}>
+                      <span style={{ color: wSalesPct >= 100 ? 'var(--green)' : wSalesPct >= 70 ? 'var(--amber)' : 'var(--text3)' }}>{wSalesPct}% من الهدف</span>
+                      <span style={{ color: 'var(--text3)' }}>84 مبيعة/أسبوع</span>
+                    </div>
+                  </div>
+
+                  {/* Reach card */}
+                  <div style={{
+                    background: 'var(--bg1)',
+                    border: '0.5px solid var(--border)',
+                    borderRadius: 14,
+                    padding: '18px 20px',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{ position: 'absolute', top: -20, left: -20, width: 80, height: 80, borderRadius: '50%', background: 'radial-gradient(circle, rgba(74,144,217,.08), transparent)', pointerEvents: 'none' }} />
+                    <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 2, textAlign: 'left' }}>إجمالي الـ Reach</div>
+                    <div style={{ fontSize: 30, fontWeight: 800, color: wReachPct >= 100 ? 'var(--green)' : 'var(--text1)', textAlign: 'left', direction: 'ltr', marginBottom: 2 }}>
+                      {Number(Math.round(weeklyTarget.reach_actual)).toLocaleString()}
+                      <span style={{ fontSize: 14, color: 'var(--text3)', fontWeight: 400 }}> / {Number(weeklyTarget.reach_target).toLocaleString()}</span>
+                    </div>
+                    <div className="prog-bar" style={{ height: 4, margin: '10px 0 8px' }}>
+                      <div className="prog-fill" style={{ width: wReachPct + '%', background: wReachPct >= 100 ? 'var(--green)' : '#4A90D9', boxShadow: wReachPct >= 100 ? '0 0 8px rgba(46,204,113,.5)' : '0 0 6px rgba(74,144,217,.4)' }} />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10 }}>
+                      <span style={{ color: wReachPct >= 100 ? 'var(--green)' : wReachPct >= 70 ? 'var(--amber)' : 'var(--text3)' }}>{wReachPct}% من الهدف</span>
+                      <span style={{ color: 'var(--text3)' }}>833,333/أسبوع</span>
                     </div>
                   </div>
                 </div>
-              </>
+              </div>
             )}
 
             {/* History */}
