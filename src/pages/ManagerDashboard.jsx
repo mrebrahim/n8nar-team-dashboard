@@ -14,7 +14,7 @@ const SOCIAL_DATA = {
 const DAYS = ['8م','9م','10م','11م','12م','13م','14م']
 
 // Who can assign tasks
-const CAN_ASSIGN = ['ibrahim@n8nar.com','mina@n8nar.com','engy@n8nar.com']
+const CAN_ASSIGN = ['ibrahim@n8nar.com','mina@n8nar.com','engy@n8nar.com','andrew.i@n8nar.com']
 
 const TABS = [
   { id: 'overview', label: 'الرئيسية', icon: '🏠' },
