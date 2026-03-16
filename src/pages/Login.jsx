@@ -89,18 +89,6 @@ export default function Login({ onLogin }) {
             </button>
           </form>
 
-          <div style={{ marginTop: 20, paddingTop: 16, borderTop: '0.5px solid var(--border)' }}>
-            <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 10 }}>تسجيل سريع:</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {USERS.map(u => (
-                <button key={u.email} onClick={() => { setEmail(u.email); setPassword(u.password); }}
-                  style={{ background: 'var(--bg2)', border: '0.5px solid var(--border)', borderRadius: 6, padding: '4px 10px', fontSize: 11, color: 'var(--text2)', cursor: 'pointer' }}>
-                  {u.name.split(' ')[0]}
-                  {u.is_manager && <span style={{ color: '#F5A623', marginRight: 3 }}>★</span>}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </div>
