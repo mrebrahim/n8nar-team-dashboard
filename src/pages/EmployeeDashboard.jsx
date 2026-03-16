@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
+import MotivationPage from './MotivationPage'
 
 const TABS = [
   { id: 'targets', label: 'تارجتي', icon: '🎯' },
   { id: 'tasks',   label: 'مهامي',  icon: '✅' },
   { id: 'report',  label: 'رفع تقرير', icon: '📊' },
+  { id: 'mission', label: 'Mission 1000', icon: '🔥' },
 ]
 
 export default function EmployeeDashboard({ user, onLogout }) {
@@ -422,6 +424,12 @@ export default function EmployeeDashboard({ user, onLogout }) {
             <button className="primary-btn" onClick={submitReport} disabled={saving} style={{ background: color }}>
               {saving ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}><span style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 1s linear infinite', display: 'inline-block' }} />جاري الحفظ...</span> : report ? 'تحديث التقرير' : 'إرسال التقرير'}
             </button>
+          </div>
+        )}
+        {/* ══ MISSION TAB ══ */}
+        {tab === 'mission' && (
+          <div className="fade-in" style={{ margin: '-20px -16px' }}>
+            <MotivationPage user={user} />
           </div>
         )}
       </div>

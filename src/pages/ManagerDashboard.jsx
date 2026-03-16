@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
+import MotivationPage from './MotivationPage'
 
 const SOCIAL_DATA = {
   facebook: [24540,9008,25158,12905,35026,38024,40928],
@@ -20,7 +21,8 @@ const TABS = [
   { id: 'team', label: 'الفريق', icon: '👥' },
   { id: 'assign', label: 'إسناد مهام', icon: '⚡' },
   { id: 'social', label: 'السوشيال', icon: '📱' },
-  { id: 'reports', label: 'التقارير', icon: '📋' },
+  { id: 'reports',    label: 'التقارير',    icon: '📋' },
+  { id: 'mission',   label: 'Mission 1000', icon: '🔥' },
 ]
 
 function MiniBar({ data, color = '#4A90D9', height = 40 }) {
@@ -509,6 +511,13 @@ export default function ManagerDashboard({ user, onLogout }) {
                 • TikTok منخفض — فيديوهات أقل من 20 ث أنجح
               </div>
             </div>
+          </div>
+        )}
+
+        {/* MISSION */}
+        {tab === 'mission' && (
+          <div className="fade-in" style={{ margin: '-20px -16px' }}>
+            <MotivationPage user={user} />
           </div>
         )}
 
