@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap');
 
-400;500;600;700;800;900&display=swap');
+
 
 /* Arabic font - Cairo with system fallbacks */
 * {
@@ -28,7 +28,7 @@ body {
   --red: #E74C3C;
   --purple: #9B59B6;
   --teal: #1ABC9C;
-  --font: 'Cairo', sans-serif;
+  --font: 'Cairo', 'Segoe UI', Tahoma, Arial, sans-serif;
   --mono: 'IBM Plex Mono', monospace;
 }
 
